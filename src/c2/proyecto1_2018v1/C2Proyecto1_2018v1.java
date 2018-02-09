@@ -16,7 +16,9 @@ public class C2Proyecto1_2018v1 {
      */
     public static void main(String[] args) {
         // TODO code application logic here
-        System.out.println("hola que hace");
+        System.out.println("hola que hace modifique");
+        System.out.println("hola q hace");
+              
     }
     
 }
