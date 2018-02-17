@@ -1,0 +1,79 @@
+package c2.gramaticas;
+import java_cup.runtime.Symbol;
+import java.io.*;
+
+
+//import Manejo_Errores.tablaErrores;
+import c2.ast.Nodo;
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+ parser code
+
+ {:
+
+
+    // public static tablaErrores tablaE;
+     public Nodo raiz;
+    // public static List<tablaErrores> tablaErr= new ArrayList<tablaErrores>(); //tabla de errores
+
+     public void syntax_error(Symbol s){
+
+         /**Metodo al que se llama automaticamente ante algun error sintactico.*/
+
+         System.out.println("Error Sintactico en la Linea " + (s.right+1) +" Columna "+s.left+ ". Identificador " +s.value + " no reconocido.\n" );
+
+         
+
+         report_error("Error de sintaxis. Linea: " + (s.right + 1) +
+
+             " Columna: " + s.left + ". Texto: \"" + s.value + "\"\n", null);
+
+        // tablaE= new tablaErrores(s.value.toString(), s.left, s.right+1,"Error Sintactico");
+        // tablaErr.add(tablaE);
+
+     }            
+
+     public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
+
+         /**Metodo al que se llama en el momento en que ya no es posible una recuperacion de errores.*/
+
+         System.out.println("Error Sintactico en la Linea " + (s.right+1)+ "Columna "+s.left+". Identificador " + s.value + " no reconocido.\n");
+
+     
+
+         report_error("Error de sintaxis. Linea: " + (s.right + 1) +
+
+             " Columna: " + s.left + ". Texto: \"" + s.value + "\"\n", null);
+
+
+         //Errors error = new Errors(s.right+1, s.left, s.value.toString(),"Error Sintactico!");
+
+         //Sintactic_Errors.add(error);
+     }
+
+
+
+ :}
+
+/** el no terminal PARAMETRO según el enunciado indica que puede venir EXP o LIST, página 22*/
+/** Adentro de cada llamada a función pueden venir más llamadas a funciones por medio del símbolo dollar($) */
+/** Terminado y probado con el ejemplo en la página 24-25*/
+
+
+terminal String chtmlo, chtmlc, heado, headc, tituloo, tituloc, panelo, panelc, bodyo, bodyc, cjso, cjsc,
+                ccsso, ccssc, fondo, ruta, id, grupo, alto, ancho, alineado, id2, num, caracter, cadena ;
+
+non terminal Nodo  L; //HACE RECURSIVAS 
+non terminal Nodo INICIO;
+
+
+
+
+start with INICIO;
+
+INICIO ::= chtmlo chtmlc
+    ;

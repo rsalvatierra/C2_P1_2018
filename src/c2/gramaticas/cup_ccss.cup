@@ -1,0 +1,402 @@
+package compi.proy.gramaticas;
+import java_cup.runtime.Symbol;
+import java.io.*;
+
+import compi.proy.ast.Nodo;
+
+
+parser code
+
+{:
+
+public Nodo raiz;
+
+     public void syntax_error(Symbol s){
+
+         /**Metodo al que se llama automaticamente ante algun error sintactico.*/
+
+         System.out.println("Error Sintactico en la Linea " + (s.right+1) +" Columna "+s.left+ ". Identificador " +s.value + " no reconocido.\n" );
+
+         
+
+         report_error("Error de sintaxis. Linea: " + (s.right + 1) +
+
+             " Columna: " + s.left + ". Texto: \"" + s.value + "\"\n", null);
+
+        // tablaE= new tablaErrores(s.value.toString(), s.left, s.right+1,"Error Sintactico");
+        // tablaErr.add(tablaE);
+
+     }            
+
+     public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
+
+         /**Metodo al que se llama en el momento en que ya no es posible una recuperacion de errores.*/
+
+         System.out.println("Error Sintactico en la Linea " + (s.right+1)+ "Columna "+s.left+". Identificador " + s.value + " no reconocido.\n");
+
+     
+
+         report_error("Error de sintaxis. Linea: " + (s.right + 1) +
+
+             " Columna: " + s.left + ". Texto: \"" + s.value + "\"\n", null);
+
+
+         //Errors error = new Errors(s.right+1, s.left, s.value.toString(),"Error Sintactico!");
+
+         //Sintactic_Errors.add(error);
+     }
+
+
+:}
+
+
+terminal String mas,menos,mult,div,sqrt,mod,pot,dollar,para,parc,let, coma,igual,corch_a,corch_c,porcent,concat,
+                    indice,llavea,llavec,calcular,succ,decc,min,max,sum,product,revers,impr,par,asc,desc,length,id,numero,cadena,letra;
+
+
+non terminal Nodo INICIO, LINEA, OPCION_COMANDO, DECLARACION_LISTA, CALCULAR_EXP,SUCC_EXP,DECC_EXP,MIN_LIST,FUNCION_ELEMENTO,
+                    MAX_LIST,CONCAT_LIST,INDICE_LIST,OPERACIONES_LISTA,EXP, LISTA_CADENA, LISTA, ELEMENTO, LISTA_CONCAT,
+                    ELEMENTO_SIMPLE, LISTA_SIMPLE, LISTA_INDICES,OPERACION, LLAMADA_FUNCION, PARAMETROS, INDICE_OPCIONAL,EXP_LISTA; 
+
+precedence left concat;
+precedence left mas,menos;
+precedence left mult, div ,mod;
+precedence left pot,sqrt;
+
+
+
+                    
+
+start with INICIO;
+
+INICIO ::= LINEA:linea
+    {:
+        parser.raiz=linea;
+    :}
+    ;	
+
+
+LINEA ::= dollar OPCION_COMANDO:opcion dollar
+    {:
+        RESULT=opcion;
+    :}
+    ;
+
+// las opciones de cualquier comando en terminal son las siguientes.
+OPCION_COMANDO ::= CALCULAR_EXP:calcular_exp
+        {:
+            RESULT=calcular_exp; 
+        :}
+    |SUCC_EXP:succ_exp
+        {:
+            RESULT=succ_exp;
+         :}
+    |DECC_EXP:decc_exp
+        {:
+            RESULT=decc_exp;
+         :}
+    |MIN_LIST:min_list
+        {:
+            RESULT=min_list; 
+        :}
+    |MAX_LIST:max_list
+        {:
+            RESULT=max_list; 
+        :}
+    |INDICE_LIST:indice_list
+        {:
+            RESULT=indice_list;
+        :}
+    |OPERACIONES_LISTA:opera_list
+        {:
+            RESULT=opera_list; 
+        :}
+    |DECLARACION_LISTA:declara_list
+        {:
+            RESULT=declara_list; 
+        :}
+    |LLAMADA_FUNCION:llama_funcion
+        {:
+            RESULT=llama_funcion; 
+        :}
+    ;
+//declaracion lista -----------------------------------------------------------------------------------------------------
+
+    // AL declarar una lista puede estar declarada con let para guardarla o sin let para solo utilizarla
+DECLARACION_LISTA ::= let id:id igual LISTA_CADENA:list_cadena
+            {:
+                Nodo hoja= new Nodo(id, "ID");
+                RESULT=new Nodo(hoja, list_cadena,"DECLARACION_LIST");
+            :}
+	|LISTA_CADENA:list_cadena
+            {:RESULT=list_cadena; :}
+	;
+
+
+
+//LISTA_CADENA = significa que viene un lista normal o una cadena o una lista concatenada
+LISTA_CADENA ::= corch_a LISTA:list corch_c
+            {:RESULT=list; :}
+	| cadena:cadena
+            {:
+                Nodo hoja= new Nodo(cadena,"Cadena");
+                RESULT=new Nodo(hoja,"Cadena");
+            :}
+	| CONCAT_LIST:concat_list
+            {:RESULT=concat_list; :}
+	;   
+
+// lista de elementos separados por coma
+LISTA ::= LISTA:list coma ELEMENTO:element
+            {:
+                list.setHijo(element);
+                RESULT=list;
+            :}
+	|ELEMENTO:element
+            {:
+                RESULT=element;
+                // RESULT= new Nodo(element,"LISTA_ELEMENTO");
+            :}
+	;
+// dentro de una lista puede venir mas listas que contengan expreciones o caracter o listas (no cadenas)
+ELEMENTO ::= letra:letra
+        {:
+            Nodo hoja= new Nodo(letra,"LETRA");
+            RESULT= new Nodo(hoja, "LETRA");
+        :}
+	| EXP:exp
+        {:RESULT=exp; :}
+	| corch_a LISTA:list corch_c
+        {:RESULT=list; :}
+	;
+
+
+
+//calcular exp ----------------------------------------------------------------------------------------------------------
+CALCULAR_EXP ::= calcular:calc EXP:exp
+        {:
+            Nodo hoja= new Nodo(calc, "Calcular");
+            RESULT=new Nodo(hoja,exp,"CALC_EXPRESION"); 
+              
+        :}
+    ;
+
+EXP ::= EXP:izq mas:mas EXP:der
+        {:
+            RESULT=new Nodo(izq, der, mas,"OPERA_SUM"); 
+        :}
+        | EXP:izq menos:menos EXP:der
+        {:
+            RESULT=new Nodo(izq, der, menos,"OPERA_MENOS"); 
+        :}
+        | EXP:izq mult:mult EXP:der
+        {:
+            RESULT=new Nodo(izq, der, mult,"OPERA_MULT"); 
+        :}
+        | EXP:izq div:div EXP:der
+        {:
+            RESULT=new Nodo(izq, der, div,"OPERA_DIV"); 
+        :}
+        | EXP:izq mod:mod EXP:der
+        {:
+            RESULT=new Nodo(izq, der, mod,"OPERA_MOD"); 
+        :}
+        | EXP:izq pot:pot EXP:der
+        {:
+            RESULT=new Nodo(izq, der, pot,"OPERA_POT"); 
+        :}
+        | EXP:izq sqrt:sqrt EXP:der
+        {:
+            RESULT=new Nodo(izq, der, sqrt,"OPERA_SQRT"); 
+        :}
+        | para EXP:exp parc
+        {:
+            RESULT=exp; 
+        :}
+        | menos:menos EXP:der
+        {:
+            RESULT=new Nodo(der,menos); 
+        :}
+        | numero:num
+        {:
+            Nodo hoja= new Nodo(num, "NUM");
+            RESULT=new Nodo(hoja, "NUM"); 
+            
+        :}
+        | dollar OPCION_COMANDO:opcion dollar
+        {:
+            RESULT=opcion; 
+        :}
+        | porcent:porcent
+        {:
+            Nodo hoja= new Nodo(porcent, "PORCENT");
+            RESULT= new Nodo(hoja, "Porcent");
+        :}
+	;
+
+//suc dec exprecion  ---------------------------------------------------------------------------------------------------
+	//falto factorizar
+DECC_EXP ::= decc dollar calcular EXP:exp dollar
+        {:
+            RESULT= new Nodo(exp, "DECC_EXP");
+        :}
+        ;
+SUCC_EXP ::= succ dollar calcular:cal EXP:exp dollar
+        {:
+            RESULT= new Nodo(exp, "SUCC_EXP");
+        :}
+        ;
+
+//min max lista-------------------------------------------------------------------------------------------------------
+//falto factorizar
+MIN_LIST ::= min id:id 
+        {:
+            Nodo hoja= new Nodo(id, "ID");
+            RESULT= new Nodo(hoja, "MIN_LIST");
+        :}
+	| min LISTA_CADENA:list_cadena
+        {:
+            RESULT= list_cadena;
+        :}
+	;
+
+MAX_LIST ::= max id:id
+        {:
+            Nodo hoja= new Nodo(id, "ID");
+            RESULT= new Nodo(hoja, "MAX_LIST");
+        :}
+	| max LISTA_CADENA:list_cadena
+        {:
+            RESULT= list_cadena;
+        :}
+	;
+
+//concatenacion lista --------------------------------------------------------------------------------------------------
+	//EL ENUNCIADO DICE CLARAMENTE CONCATENACION DE DOS LISTAS NO MAS Y SI SI NO COSTARIA TANTO :3
+CONCAT_LIST ::= LISTA_CONCAT:list_concat concat:con LISTA_CONCAT:list_c
+        {:
+            RESULT= new Nodo(list_concat, list_c,con,"CONCAT_LIST" );
+        :}
+        ;
+
+LISTA_CONCAT ::= LISTA_CADENA:list_cadena
+       {:
+            RESULT= list_cadena;
+       :}
+        ;
+
+
+//indice listas --------------------------------------------------------------------------------------------------------
+	//al pedir un indice puede ser de una lista ya en memoria o solo la lista
+INDICE_LIST ::= id:id LISTA_INDICES:list_indice
+        {:
+            Nodo hoja= new Nodo(id, "ID");
+            RESULT= new Nodo(hoja, list_indice,"INDICE_LIST");
+        :}
+	|LISTA_CADENA:list_cadena LISTA_INDICES:list_indice
+        {:
+            RESULT= new Nodo(list_cadena, list_indice, "INDICE_LIST");
+        :}
+	;
+
+LISTA_INDICES ::= LISTA_INDICES:list_indice indice dollar calcular EXP:exp dollar
+        {:
+            //RESULT= new Nodo(list_indice, exp, "LIST_INDICE");
+            list_indice.setHijo(exp);
+            RESULT=list_indice;
+        :}
+	| indice dollar calcular EXP:exp dollar
+        {:
+            RESULT= new Nodo(exp, "LIST_INDICE");;
+        :}
+	;
+
+//opraciones con listas -------------------------------------------------------------------------------------------------
+
+OPERACIONES_LISTA ::= OPERACION:opera id:id
+         {:
+            Nodo hoja= new Nodo(id, "ID");
+            RESULT= new Nodo(hoja,opera,"OPERACIONES_LIST");
+         :}
+	|OPERACION:opera LISTA_CADENA:list_cadena
+        {:
+            RESULT= new Nodo(opera, list_cadena, "OPERACIONES_LIST");
+        :}
+	;
+
+OPERACION ::= sum:sum
+        {:
+            Nodo hoja= new Nodo(sum, "SUM");
+            RESULT= new Nodo(hoja, "SUM");
+        :}
+	|product:product
+        {:
+            Nodo hoja= new Nodo(product, "PRODUCT");
+            RESULT= new Nodo(hoja, "PRODUCT");
+        :}
+	|revers:revers
+        {:
+            Nodo hoja= new Nodo(revers, "REVERS");
+            RESULT= new Nodo(hoja, "REVERS");
+        :}
+	|impr:impr
+        {:
+            Nodo hoja=new Nodo(impr, "IMPR");
+            RESULT= new Nodo(hoja, "IMPR");
+        :}
+	|par:par
+        {:
+            Nodo hoja= new Nodo(par, "PAR");
+            RESULT= new Nodo(hoja, "PAR");
+        :}
+	|asc:asc
+        {:
+            Nodo hoja= new Nodo(asc, "ASC");
+            RESULT= new Nodo(hoja, "ASC");
+        :}
+	|desc:desc
+        {:
+            Nodo hoja= new Nodo(desc, "DESC");
+            RESULT= new Nodo(hoja, "DESC");
+        :}
+	|length:length
+        {:
+            Nodo hoja= new Nodo(length, "LENGTH");
+            RESULT= new Nodo(hoja, "LENGTH");
+        :}
+	;
+
+
+
+LLAMADA_FUNCION ::= id:id llavea PARAMETROS:parametros llavec
+        {:
+            Nodo hoja= new Nodo(id, "ID");
+            RESULT= new Nodo(hoja, parametros, "LLAMADA_FUNCION");
+        :}
+        ;
+
+// los parametros pueden ser una EXP o LIST
+PARAMETROS ::= PARAMETROS:parametros coma  EXP_LISTA:exp_list
+        {:
+            parametros.setHijo(exp_list);
+            RESULT= parametros;
+        :}
+	|EXP_LISTA:exp_list
+        {:
+            RESULT=exp_list;
+        :}
+	;
+
+// hasta donde yo entendi un parametro puede ser un numero solo que al final de cuentas es una EXP
+// pero como una EXP no puede venir sola ecepto para la funcion calcular por eso deje calcular
+	//ejemplo: $funcion {$Calcular 2$,[2,3]}$
+	//una funcion q envia un 2 y una lista
+EXP_LISTA ::= dollar calcular EXP:exp dollar
+        {:
+            RESULT= exp;
+        :}
+	| LISTA_CADENA:list_cadena
+        {:
+            RESULT= list_cadena;
+        :}
+	;
